@@ -1,5 +1,6 @@
 # nikolay-semenov_infra
 bastion_IP = 35.207.182.230
+
 someinternalhost_IP = 10.156.11.4
 
 ## Задание: знакомство с облачной инфраструктурой GCP
