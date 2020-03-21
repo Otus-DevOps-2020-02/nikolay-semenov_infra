@@ -1,5 +1,6 @@
 # nikolay-semenov_infra
 testapp_IP = 34.89.160.139
+
 testapp_port = 9292
 
 ## Задание: способы управления ресурсами в GCP
