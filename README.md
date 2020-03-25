@@ -1,70 +1,70 @@
 # nikolay-semenov_infra
-bastion_IP = 35.207.182.230
+testapp_IP = 34.89.160.139
 
-someinternalhost_IP = 10.156.11.4
+testapp_port = 9292
 
-## Задание: знакомство с облачной инфраструктурой GCP
+## Задание: способы управления ресурсами в GCP
 
 ### В рамках задания, было поставлены следующие задачи:
 
-1. Развернуть облачную сеть;
+1. Развернуть инстанс;
 
-2. Развернуть два инстанса - bastion (с публичным адресом), instance-1 без публичного адреса;
+2. Установить mongodb, ruby, задеплоить тестовое приложение
 
-2.1. В дальнейшем, планировалось использовать bastion как jump-host к instance-1 и укаазать, как осуществить подключение в одну строку;
+3. Настроить правила firewall
 
-3. Настроить схему подключения с использованием стороннего ресурса pritunl
+4. Подготовить startup скрипт для запуска инстанса с уже установленными зависимостями и приложением
+
+5. Создать firewall правило используя клиент gcloud
 
 ### Решение поставленных задач:
+1, 3, 4 Развернуть инстанс, настроить правила firewall, создать правило используя клиент gcloud
 
-1, 2. Развернуть облачную сеть и два инстанса: bastion, instance-1
+Комманда для разворачивания инстанса, а так же добавления необходимых fw-правил:
 
-Для решения данной задачи, было решено описать инфраструктуру согласно концепции IaC с использованием terraform. В качестве структуры каталогов,
-было решено использовать модульную архитектуру, в которой мы имеем два каталога:
+gcloud compute instances create reddit-app \
+  --boot-disk-size=10GB \
+  --image-family ubuntu-1604-lts \
+  --image-project=ubuntu-os-cloud \
+  --machine-type=g1-small \
+  --tags puma-server \
+  --restart-on-failure
 
-tf-infra-plan - позволяет нам динамически описывать инфраструктуру с использованием уже подготовленных модулей, вся работа plan\apply\destroy происходит из этого каталога
+gcloud compute firewall-rules create allow-all-icmp \
+  --allow ICMP \
+  --network default \
+  --direction ingress \
+  --priority 1000
 
-tf-infra-modules - позволяет нам подготовить инфраструктуру и переиспользовать её для разных сред, линейно расширяя и добавляя необходимые нам ресурсы
+gcloud compute firewall-rules create allow-all-ssh \
+  --allow TCP:22 \
+  --network default \
+  --direction ingress \
+  --priority 1000
 
-### Как использовать:
+gcloud compute firewall-rules create allow-all-puma-server \
+  --allow TCP:9292 \
+  --network defaut \
+  --direction ingress \
+  --priority 1000
 
-- Устанавливаем terraform https://learn.hashicorp.com/terraform/getting-started/install.html#installing-terraform
+2. Установить mongodb, ruby, задеплоить тестовое приложение
 
-- Перейдя в tf-infra-plan инициализируем репозиторий terraform: terraform init
+Установка описана в install_mongodb.sh, install_ruby.sh, deploy.sh. Как запустить:
 
-- Подставляем в переменные main.tf необходимые нам значения
+cd /path/to/script.sh &&
 
-- Экспортируем переменные для ключа доступа GCP: export GOOGLE_CLOUD_KEYFILE_JSON=/path/to/key.json
+sudo ./script.sh
 
-- terraform plan
+4. Подготовить startup скрипт для запуска инстанса с уже установленными зависимостями и приложением:
 
-- terrafirm apply
+В startup.sh описаны необходимые действия для установки. Добавление скрипта в метаданные выглядит так:
 
-### Возможные проблемы:
-
-- После запуска terraform apply 400 ошибка Api google, говорящая нам об отсутсвии VPC
-
-- После запуска terraform destory 400 ошибка API google, говорящая нам об использовании VPC
-
-### Решение:
-
-Т.к. timeoute в модуле VPC не доступен, единственное рабочее решение которое удалось найти: повторный запуск apply\plan после данной ошибки
-
-2.1. Использование bastion-host в качестве jump-host к instance-1 и подключение в одну строку
-
-- Сразу настраиваем aliase в .ssh/config
-
-Host gcp-bastion
-  Hostname 35.207.182.230
-  User user
-  IdentityFile ~/.ssh/path/to/key
-
-Host gcp-instance
-  Hostname 10.156.11.4
-  User user
-
-- Подключаемся коммандой: ssh -A -J gcp-bastion gcp-instance
-
-3. Настройка pritunl
-
-- Выполнена, все необходимые для проверки travis-ci дейвствия выполнены.
+gcloud compute instances create reddit-app \
+  --boot-disk-size=10GB \
+  --image-family ubuntu-1604-lts \
+  --image-project=ubuntu-os-cloud \
+  --machine-type=g1-small \
+  --tags puma-server \
+  --restart-on-failure \
+  --metadata-from-file startup-script=/path/to/startup/script
