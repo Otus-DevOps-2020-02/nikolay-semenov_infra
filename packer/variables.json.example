@@ -1,0 +1,10 @@
+{
+  "source_image_family": "ubuntu-1604-lts",
+  "project_id": "XYZ",
+  "machine_type": "f1-micro",
+  "disk_size": "10",
+  "disk_type": "pd-standard",
+  "network": "default",
+  "region": "europe-west3",
+  "tags": "tag-1"
+}
